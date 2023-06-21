@@ -562,6 +562,9 @@ export default abstract class Server<ServerOptions extends Options = Options> {
         },
         // We will fire this from the renderer worker
         hideSpan: this.isRouterWorker,
+        // We will extract the span context from the headers only in the renderer worker
+        extractSpanContext: this.isRenderWorker,
+        requestHeaders: req.headers
       },
       async (span) =>
         this.handleRequestImpl(req, res, parsedUrl).finally(() => {

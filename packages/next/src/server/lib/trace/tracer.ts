@@ -7,6 +7,7 @@ import type {
   Tracer,
   AttributeValue,
 } from 'next/dist/compiled/@opentelemetry/api'
+import type {IncomingHttpHeaders} from 'http';
 
 let api: typeof import('next/dist/compiled/@opentelemetry/api')
 
@@ -27,7 +28,7 @@ if (process.env.NEXT_RUNTIME === 'edge') {
   }
 }
 
-const { context, trace, SpanStatusCode, SpanKind } = api
+const { context, propagation, trace, SpanStatusCode, SpanKind } = api
 
 const isPromise = <T>(p: any): p is Promise<T> => {
   return p !== null && typeof p === 'object' && typeof p.then === 'function'
@@ -46,6 +47,8 @@ type TracerSpanOptions = Omit<SpanOptions, 'attributes'> & {
   spanName?: string
   attributes?: Partial<Record<AttributeNames, AttributeValue | undefined>>
   hideSpan?: boolean
+  extractSpanContext?: boolean,
+  requestHeaders?: IncomingHttpHeaders
 }
 
 interface NextTracer {
@@ -219,6 +222,9 @@ class NextTracerImpl implements NextTracer {
     let spanContext = this.getSpanContext(
       options?.parentSpan ?? this.getActiveScopeSpan()
     )
+    if (options.extractSpanContext) {
+      spanContext = propagation.extract(api.ROOT_CONTEXT, options.requestHeaders);
+    }
     let isRootSpan = false
 
     if (!spanContext) {
@@ -242,7 +248,7 @@ class NextTracerImpl implements NextTracer {
           const onCleanup = () => {
             rootSpanAttributesStore.delete(spanId)
           }
-          if (isRootSpan) {
+          if (isRootSpan || span.spanContext().isRemote) {
             rootSpanAttributesStore.set(
               spanId,
               new Map(
