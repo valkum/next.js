@@ -1803,7 +1803,7 @@ export async function copyTracedFiles(
     moduleType = packageJson.type === 'module'
   } catch {}
   const copiedFiles = new Set()
-  await recursiveDelete(outputPath)
+  await recursiveDelete(outputPath, undefined, '', false)
 
   async function handleTraceFiles(traceFilePath: string) {
     const traceData = JSON.parse(await fs.readFile(traceFilePath, 'utf8')) as {

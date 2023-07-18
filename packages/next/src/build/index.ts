@@ -2933,7 +2933,7 @@ export default async function build(
           }
 
           // remove temporary export folder
-          await recursiveDelete(exportOptions.outdir)
+          await recursiveDelete(exportOptions.outdir, undefined, '', false);
           await fs.rmdir(exportOptions.outdir)
           await fs.writeFile(
             manifestPath,
